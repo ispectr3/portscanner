@@ -7,8 +7,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/kaique/portscanner-go/scanner"
-	"github.com/kaique/portscanner-go/utils"
+	"github.com/ispectr3/portscanner/scanner"
+	"github.com/ispectr3/portscanner/utils"
 )
 
 // PrintTerminal imprime os resultados coloridos no terminal

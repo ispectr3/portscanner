@@ -1,62 +1,84 @@
-# PortScanner-Go
+# PortScanner
 
-![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=for-the-badge&logo=go)
-![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)
+**High-Throughput Concurrent TCP Port Scanner in Go**
 
-**PortScanner-Go** é um scanner de portas de rede rápido e concorrente escrito em Go. Ele utiliza o modelo de concorrência nativo do Go (*goroutines* com o padrão *Worker Pool*) para varrer grandes quantidades de portas rapidamente.
+[![CI](https://github.com/ispectr3/portscanner/actions/workflows/ci.yml/badge.svg)](https://github.com/ispectr3/portscanner/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Go: 1.21+](https://img.shields.io/badge/Go-1.21%2B-00ADD8.svg?logo=go)](https://golang.org)
 
-## Funcionalidades
+PortScanner is a high-performance network reconnaissance utility written in Go. Utilizing Go's native goroutine concurrency and worker pool architecture, it rapidly scans target IP addresses and CIDR network blocks with banner grabbing and structured data export (JSON/CSV).
 
-- **Alta Performance:** Escaneamento concorrente com número configurável de goroutines.
-- **TCP Connect Scan:** Scanner baseado na API `net` padrão do Go. *(Nota: O conceito de stealth SYN scan requer raw sockets e privilégios elevados; no entanto, este projeto foca em TCP Connect)*.
-- **Detecção de Serviço (Banner Grabbing):** Tenta identificar o serviço rodando na porta enviando requisições genéricas.
-- **Alvos Flexíveis:** Escaneie um IP único ou um range usando formato CIDR (ex: `192.168.0.0/24`).
-- **Formatos de Porta:** Suporta portas separadas por vírgula (`80,443`), ranges (`1-1024`) ou as top 100 portas (`top100`).
-- **Exportação de Dados:** Salve os resultados em JSON ou CSV para análise posterior.
-- **Interface Bonita:** Banner em ASCII e saída colorida no terminal usando ANSI escape codes.
+---
 
-## Instalação
+## Concurrency Model
 
-Certifique-se de ter o Go instalado (versão 1.21 ou superior).
+```mermaid
+flowchart LR
+    A[Target CIDR / Host:Ports] --> B[Job Dispatcher Channel]
+    B --> W1[Worker Goroutine 1]
+    B --> W2[Worker Goroutine 2]
+    B --> Wn[Worker Goroutine N]
+    W1 -->|TCP Connect + Banner Probe| C[Results Channel]
+    W2 -->|TCP Connect + Banner Probe| C
+    Wn -->|TCP Connect + Banner Probe| C
+    C --> D[Aggregator: JSON / CSV Exporter]
+```
+
+---
+
+## Features
+
+- **Concurrent Worker Pool**: Configurable concurrency (`-threads`, default: 100 goroutines) with non-blocking channel distribution.
+- **CIDR & Subnet Scanning**: Automatically expands IPv4 subnets (e.g. `192.168.1.0/24`) into discrete scanning jobs.
+- **Service Banner Grabbing**: Probes responsive ports with HTTP and protocol handshakes to extract daemon versions.
+- **Port Selection**: Supports comma-separated lists (`80,443`), ranges (`1-1024`), or curated top-ports (`top100`).
+- **Structured Output**: Direct export to JSON or CSV for automated vulnerability scanner ingestion.
+
+---
+
+## Installation
+
+### Prerequisites
+
+- Go 1.21+
 
 ```bash
-git clone https://github.com/kaique/portscanner-go.git
-cd portscanner-go
-go mod tidy
+git clone https://github.com/ispectr3/portscanner.git
+cd portscanner
 go build -o portscanner main.go
 ```
 
-## Uso
+---
+
+## Usage
 
 ```bash
-./portscanner -host <alvo> [opções]
+./portscanner -host <target> [flags]
 ```
 
-### Exemplos:
+### Examples
 
-Escanear as top 100 portas de um único host:
 ```bash
+# Scan a single host for top 100 ports
 ./portscanner -host 192.168.1.10 -ports top100
+
+# Scan a port range with 250 threads
+./portscanner -host 10.0.0.1 -ports 1-1000 -threads 250
+
+# Scan an entire subnet and export to JSON
+./portscanner -host 192.168.1.0/24 -ports 80,443,8080 -format json -output results.json
 ```
 
-Escanear range de portas em uma rede inteira, usando 500 threads e exportando para CSV:
+---
+
+## Automated Testing
+
 ```bash
-./portscanner -host 192.168.1.0/24 -ports 1-1000 -threads 500 -output results.csv -format csv
+go test -v ./...
 ```
 
-### Opções Disponíveis:
+---
 
-- `-host`: Host único ou rede CIDR (Obrigatório).
-- `-ports`: Portas a escanear (padrão: `top100`).
-- `-threads`: Número de goroutines concorrentes (padrão: `100`).
-- `-timeout`: Timeout em milissegundos por porta (padrão: `1000`).
-- `-output`: Arquivo de saída opcional.
-- `-format`: Formato de saída para o arquivo (`json` ou `csv`).
+## License
 
-## Disclaimer
-
-Este projeto foi desenvolvido com propósitos estritamente educacionais e de pesquisa em cibersegurança. O uso desta ferramenta para testar infraestruturas sem autorização prévia mútua pode ser ilegal em seu país ou região. O desenvolvedor não se responsabiliza por qualquer uso indevido.
-
-## Licença
-
-Distribuído sob a licença MIT. Veja `LICENSE` para mais informações.
+PortScanner is open-source software licensed under the [MIT License](LICENSE).

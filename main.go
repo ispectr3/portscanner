@@ -6,9 +6,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/kaique/portscanner-go/output"
-	"github.com/kaique/portscanner-go/scanner"
-	"github.com/kaique/portscanner-go/utils"
+	"github.com/ispectr3/portscanner/output"
+	"github.com/ispectr3/portscanner/scanner"
+	"github.com/ispectr3/portscanner/utils"
 )
 
 func main() {
